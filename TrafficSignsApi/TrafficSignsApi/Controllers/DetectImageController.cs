@@ -1,8 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR.Protocol;
+using Newtonsoft.Json.Linq;
+using System.IO;
+using System.Net;
+using System.Reflection.Emit;
 using System.Security.AccessControl;
+using System.Text.RegularExpressions;
 using TrafficSignsApi.Models;
 using TrafficSignsApi.Services;
+using static System.Net.WebRequestMethods;
 
 namespace TrafficSignsApi.Controllers
 {
@@ -13,6 +19,8 @@ namespace TrafficSignsApi.Controllers
         private readonly ILogger<DetectImageController> _logger;
         private readonly IConfiguration _configuration;
         private readonly PythonScriptRunner _pyScriptRunner = new();
+        private readonly string _outputLabelRegexPattern = @"(?=(?:|;))(.*?):";
+        private readonly string _outputValueRegexPattern = @"\: (.*?)\;";
 
         public DetectImageController(ILogger<DetectImageController> logger, IConfiguration configuration)
         {
@@ -20,43 +28,95 @@ namespace TrafficSignsApi.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet]
-        public IActionResult Get([FromBody]Image image)
-        {
-            PredictionResult predictionResult = new() 
-            { 
-                Prediction = _pyScriptRunner.Run(image.Path, _configuration["pythonSettings:outputDataFolder"])
-            };
-
-            return new JsonResult(predictionResult);
-        }
-
         [HttpPost]
-        public IActionResult Post([FromForm]Image image)
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
+        public IActionResult Post()
         {
-            string path = Path.Combine(_configuration["pythonSettings:inputDataFolder"], image.Path);
             try
             {
-                using (Stream stream = new FileStream(path, FileMode.Create))
+                foreach (var file in Request.Form.Files)
                 {
-                    image.File.CopyTo(stream);
+                    string path = Path.Combine(_configuration["pythonSettings:inputDataFolder"], file.FileName);
+                    using (Stream stream = new FileStream(path, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                        stream.Close();
+                    }
                 }
 
-                PredictionResult predictionResult = new()
-                {
-                    Prediction = _pyScriptRunner.Run(path, _configuration["pythonSettings:outputDataFolder"])
-                };
+                var predictionResult =
+                        FormResults(_pyScriptRunner.Run(
+                            _configuration["pythonSettings:inputDataFolder"], 
+                            _configuration["pythonSettings:outputDataFolder"]));
 
-                FileInfo file = new(path);
-                file.Delete();
+                DirectoryInfo inputDataDirectory = new(_configuration["pythonSettings:inputDataFolder"]);
+                foreach (var file in inputDataDirectory.GetFiles())
+                    file.Delete();
 
                 return new JsonResult(predictionResult);
             }
             catch (Exception e)
             {
                 _logger.LogError(e.Message, DateTime.Now);
-                return Problem();
+                return Problem(e.Message);
             }
+        }
+
+        [NonAction]
+        private List<PredictionResult> FormResults(string scriptOutput)
+        {
+            List<PredictionResult> results = new();
+            var parts = scriptOutput.Split("Image");
+
+            var inputDirFiles = Directory.GetFiles(_configuration["pythonSettings:inputDataFolder"]);
+            int inputPhotoIndex = 0;
+
+            foreach(string part in parts)
+            {
+                if (string.IsNullOrEmpty(part))
+                    continue;
+
+                List<string> labels = GetMatchGroups(part, _outputLabelRegexPattern);
+                List<string> values = GetMatchGroups(part, _outputValueRegexPattern);
+
+                results.Add(new()
+                {
+                    FileName = Path.GetFileName(inputDirFiles[inputPhotoIndex]),
+                    PredictionData = GetPredictionDataFromImage(labels, values)
+                });
+
+                inputPhotoIndex++;
+            }
+            return results;
+        }
+
+        [NonAction]
+        private List<PredictionData> GetPredictionDataFromImage(List<string> labels, List<string> values)
+        {
+            List<PredictionData> predictionData = new();
+
+            for (int j = 0; j < labels.Count && j < values.Count; j++)
+                predictionData.Add(new()
+                {
+                    Label = labels[j],
+                    Value = values[j]
+                });
+
+            return predictionData;
+        }
+
+        // better rename 
+        [NonAction]
+        private List<string> GetMatchGroups(string scriptOutput, string pattern)
+        {
+            var matches = Regex.Matches(scriptOutput, pattern);   
+            List<string> matchGroups = new();
+
+            for (int i = 0; i < matches.Count; i++)
+                matchGroups.Add(matches[i].Groups[1].Value);
+
+            return matchGroups;
         }
     }
 }

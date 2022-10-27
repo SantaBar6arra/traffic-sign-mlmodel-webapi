@@ -23,7 +23,7 @@ namespace TrafficSignsApi.Services
             _modelFolderPath = _configuration["pythonSettings:modelFolderPath"];
         }
 
-        public string Run(string imagePath, string resultsFolderPath)
+        public string Run(string imagesFolderPath, string resultsFolderPath)
         {
             ProcessStartInfo processStartInfo = new()
             {
@@ -32,37 +32,32 @@ namespace TrafficSignsApi.Services
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                WorkingDirectory = _workingDirectory
+                WorkingDirectory = _workingDirectory, 
+                Arguments = FormQuery(imagesFolderPath, resultsFolderPath)
             };
-
-            //string scriptName = "predict.py";
-            //string modelFolderPath = @"output\trafficsignnet.model";
 
             DirectoryInfo resultsDirectoryPathInfo = new(resultsFolderPath);
             if (!resultsDirectoryPathInfo.Exists)
                 resultsDirectoryPathInfo.Create();
 
-            processStartInfo.Arguments = FormQuery(imagePath, resultsFolderPath);
-
-            string errors = string.Empty, output = string.Empty;
+            string output = string.Empty;
 
             using (var process = Process.Start(processStartInfo))
             {
                 output = process.StandardOutput.ReadToEnd();
-                errors = process.StandardError.ReadToEnd();
             }
 
-            output = output.Substring(output.IndexOf('|') + 1).Replace("\r\n", "");
+            output = output.Substring(output.IndexOf('\t') + 1).Trim('\r', '\n');
 
             return output;
         }
 
-        private string FormQuery(string imagePath, string resultsFolderPath)
+        private string FormQuery(string imagesFolderPath, string resultsFolderPath)
         {
             _queryBuilder.Clear();
             _queryBuilder.Append($"{_scriptName} ");
             _queryBuilder.Append($"-m {_modelFolderPath} ");
-            _queryBuilder.Append($"-i {imagePath} ");
+            _queryBuilder.Append($"-i {imagesFolderPath} ");
             _queryBuilder.Append($"-o {resultsFolderPath}");
 
             return _queryBuilder.ToString();

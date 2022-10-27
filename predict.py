@@ -15,92 +15,53 @@ import os
 ap = argparse.ArgumentParser()
 ap.add_argument("-m", "--model", required=True,
 	help="path to pre-trained traffic sign recognizer")
-ap.add_argument("-i", "--image", required=True,
+ap.add_argument("-i", "--images", required=True,
 	help="path to testing directory containing images")
 ap.add_argument("-o", "--output", required=True,
 	help="path to output examples directory")
 args = vars(ap.parse_args())
 
 # load the traffic sign recognizer model
-# print("[INFO] loading model...")
 model = load_model(args["model"])
 
 # load the label names
 labelNames = open("signnames.csv").read().strip().split("\n")[1:]
 labelNames = [l.split(",")[1] for l in labelNames]
 
-# grab the paths to the input images, shuffle them, and grab a sample
-# print("[INFO] predicting...")
-# imagePaths = list(paths.list_images(args["images"]))
-# random.shuffle(imagePaths)
-# imagePaths = imagePaths[:25]
-
-image_path = args["image"]
+# grab the paths to the input images
+image_paths = list(paths.list_images(args["images"]))
 
 # open file for results and clear all its contents
 file_path = os.path.sep.join([args["output"], "prediction_results.txt"])
 file = open(file_path, "w").close()
 
-image = io.imread(image_path)
-image = transform.resize(image, (32, 32))
-image = exposure.equalize_adapthist(image, clip_limit=0.1)
+results = []
 
-# preprocess the image by scaling it to the range [0, 1]
-image = image.astype("float32") / 255.0
-image = np.expand_dims(image, axis=0)
+# loop over image paths
+for (i, image_path) in enumerate(image_paths):
+	image = io.imread(image_path)
+	image = transform.resize(image, (32, 32))
+	image = exposure.equalize_adapthist(image, clip_limit=0.1)
 
-# make predictions using the traffic sign recognizer CNN
-preds = model.predict(image)
-j = preds.argmax(axis=1)[0]
-label = labelNames[j]
+	# preprocess the image by scaling it to the range [0, 1]
+	image = image.astype("float32") / 255.0
+	image = np.expand_dims(image, axis=0)
 
-# load the image using OpenCV, resize it, and draw the label
-# on it
-image = cv2.imread(image_path)
-image = imutils.resize(image, width=128)
-cv2.putText(image, label, (5, 15), cv2.FONT_HERSHEY_SIMPLEX,
-	0.45, (0, 0, 255), 2)
+	# make predictions using the traffic sign recognizer CNN
+	preds = model.predict(image)
+	j = preds.argmax(axis=1)[0]
+	label = labelNames[j]
 
-# write results of prediction to file
-file = open(file_path, "a")
-file.write(label + "\n")
+	prediction_probabilities = []
+	for i in range(0, len(labelNames)):
+		prediction_probabilities.append((labelNames[i], preds[0][i]))
+	prediction_probabilities = sorted(prediction_probabilities, key = lambda x: x[1], reverse=True)[0:5]
 
-print()
-print("|" + label)
+	results.append(prediction_probabilities)
 
-# save the image to disk
-p = os.path.sep.join([args["output"], "{}.png".format(0)])
-cv2.imwrite(p, image)
-
-# loop over the image paths
-# for (i, imagePath) in enumerate(imagePaths):
-# 	# load the image, resize it to 32x32 pixels, and then apply
-# 	# Contrast Limited Adaptive Histogram Equalization (CLAHE),
-# 	# just like we did during training
-# 	image = io.imread(imagePath)
-# 	image = transform.resize(image, (32, 32))
-# 	image = exposure.equalize_adapthist(image, clip_limit=0.1)
-#
-# 	# preprocess the image by scaling it to the range [0, 1]
-# 	image = image.astype("float32") / 255.0
-# 	image = np.expand_dims(image, axis=0)
-#
-# 	# make predictions using the traffic sign recognizer CNN
-# 	preds = model.predict(image)
-# 	j = preds.argmax(axis=1)[0]
-# 	label = labelNames[j]
-#
-# 	# load the image using OpenCV, resize it, and draw the label
-# 	# on it
-# 	image = cv2.imread(imagePath)
-# 	image = imutils.resize(image, width=128)
-# 	cv2.putText(image, label, (5, 15), cv2.FONT_HERSHEY_SIMPLEX,
-# 		0.45, (0, 0, 255), 2)
-#
-# 	# write results of prediction to file
-# 	file = open(file_path, "a")
-# 	file.write(str(i) + " : " + label + "\n")
-#
-# 	# save the image to disk
-# 	p = os.path.sep.join([args["examples"], "{}.png".format(i)])
-# 	cv2.imwrite(p, image)
+print('\t')
+for i in range (0, len(results)):
+	print(f'Image {i}')
+	for a, b in results[i]:
+		print(a + ': ' + str(b) + ';')
+	print()
