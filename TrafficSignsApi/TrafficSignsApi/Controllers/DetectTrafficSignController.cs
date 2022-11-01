@@ -15,9 +15,9 @@ namespace TrafficSignsApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class DetectImageController : ControllerBase
+    public class DetectTrafficSignController : ControllerBase
     {
-        private readonly ILogger<DetectImageController> _logger;
+        private readonly ILogger<DetectTrafficSignController> _logger;
         private readonly IConfiguration _configuration;
         private readonly PythonScriptRunner _pyScriptRunner;
 
@@ -25,7 +25,7 @@ namespace TrafficSignsApi.Controllers
         private const string _outputValueRegexPattern = @"\: (.*?)\;";
         private const string _imageOutputDivider = "Image";
 
-        public DetectImageController(ILogger<DetectImageController> logger, IConfiguration configuration)
+        public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
@@ -39,9 +39,13 @@ namespace TrafficSignsApi.Controllers
         {
             try
             {
+                string guid = Guid.NewGuid().ToString();
+                DirectoryInfo photosDirectory = Directory.CreateDirectory(
+                    Path.Combine(_configuration[Constants.Constants.InputDataFolder], guid));
+
                 foreach (var file in Request.Form.Files)
                 {
-                    string path = Path.Combine(_configuration[Constants.Constants.InputDataFolder], file.FileName);
+                    string path = Path.Combine(photosDirectory.FullName, file.FileName);
                     using (Stream stream = new FileStream(path, FileMode.Create))
                     {
                         file.CopyTo(stream);
@@ -51,12 +55,10 @@ namespace TrafficSignsApi.Controllers
 
                 var predictionResult =
                         FormResults(_pyScriptRunner.Run(
-                            _configuration[Constants.Constants.InputDataFolder], 
-                            _configuration[Constants.Constants.OutputDataFolder]));
+                            photosDirectory.FullName, 
+                            _configuration[Constants.Constants.OutputDataFolder]), photosDirectory.FullName);
 
-                DirectoryInfo inputDataDirectory = new(_configuration[Constants.Constants.InputDataFolder]);
-                foreach (var file in inputDataDirectory.GetFiles())
-                    file.Delete();
+                photosDirectory.Delete(recursive: true);
 
                 return new JsonResult(predictionResult);
             }
@@ -68,12 +70,12 @@ namespace TrafficSignsApi.Controllers
         }
 
         [NonAction]
-        private List<PredictionResult> FormResults(string scriptOutput)
+        private List<PredictionResult> FormResults(string scriptOutput, string inputFolderName)
         {
             List<PredictionResult> results = new();
             var parts = scriptOutput.Split(_imageOutputDivider);
 
-            var inputDirFiles = Directory.GetFiles(_configuration[Constants.Constants.InputDataFolder]);
+            var inputDirFiles = Directory.GetFiles(inputFolderName);
             int inputPhotoIndex = 0;
 
             foreach(string part in parts)

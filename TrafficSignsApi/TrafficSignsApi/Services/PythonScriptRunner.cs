@@ -40,11 +40,12 @@ namespace TrafficSignsApi.Services
             if (!resultsDirectoryPathInfo.Exists)
                 resultsDirectoryPathInfo.Create();
 
-            string output = string.Empty;
+            string output = string.Empty, error = String.Empty;
 
             using (var process = Process.Start(processStartInfo))
             {
                 output = process.StandardOutput.ReadToEnd();
+                error = process.StandardError.ReadToEnd();
             }
 
             output = output.Substring(output.IndexOf('\t') + 1).Trim('\r', '\n');

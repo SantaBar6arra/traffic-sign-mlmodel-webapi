@@ -8,12 +8,12 @@ namespace TrafficSignsApi.Controllers
     [ApiController]
     public class LabelsController : ControllerBase
     {
-        private readonly ILogger<DetectImageController> _logger;
+        private readonly ILogger<DetectTrafficSignController> _logger;
         private readonly IConfiguration _configuration;
 
         private const char _tableColumnsDivider = ',';
 
-        public LabelsController(ILogger<DetectImageController> logger, IConfiguration configuration)
+        public LabelsController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
