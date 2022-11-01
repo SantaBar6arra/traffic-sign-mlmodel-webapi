@@ -8,12 +8,12 @@ namespace TrafficSignsApi.Controllers
     [ApiController]
     public class LabelsController : ControllerBase
     {
-        private readonly ILogger<DetectTrafficSignController> _logger;
+        private readonly ILogger<LabelsController> _logger;
         private readonly IConfiguration _configuration;
 
         private const char _tableColumnsDivider = ',';
 
-        public LabelsController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration)
+        public LabelsController(ILogger<LabelsController> logger, IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
@@ -34,6 +34,7 @@ namespace TrafficSignsApi.Controllers
                     }
                     streamReader.Close();
                 }
+                labels.RemoveAt(0); // deleting column name
 
                 return new JsonResult(labels);
             }
