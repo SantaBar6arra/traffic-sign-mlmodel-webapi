@@ -1,0 +1,102 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Load your traffic sign photos using "Browse files" button, then click "submit"</p>
+
+    <input type="file" id="file-input" name="file" class="mt-2" multiple />
+    <br />
+    <button class="btn btn-info mt-2" onclick="submitImages()">Submit</button>
+    <button class="btn btn-info mt-2" id="show-labels-button">Show possible results</button>
+</div>
+<div id="prediction-results-field"></div>
+
+<partial name="LabelsModalPartial" />
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+
+    <script>
+        $(document).ready(loadLabels)
+
+        function loadLabels() {
+            $.ajax({
+                url: '/labels',
+                type: 'get',
+                success: function (response) {
+                    let htmlString = ''
+                    for(let label of response) {
+                        htmlString += '<p class="mb-1">' + label + '</p>'
+                    }
+                    $('#labels-modal-body').html(htmlString)
+                }
+            })
+        }
+
+        $('#show-labels-button').click(function() {
+            $('#labels-modal-window').modal('show')
+        })
+
+        $('#labels-close-button').click(function() {
+            $('#labels-modal-window').modal('hide')
+        })
+
+        function submitImages(){
+            $('#prediction-results-field').html('')
+            let data = new FormData()
+            let files = $('#file-input')[0].files
+
+            if (files.length > 0) {
+                for(const file of files)
+                    data.append('file', file)
+
+                $.ajax({
+                    url: '/detect-traffic-sign',
+                    type: 'post',
+                    data: data,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        $('#prediction-results-field').html(parsePredictionResult(response, files))
+                    }
+                })
+            } else {
+                alert('there are no files')
+            }
+        }
+
+        function parsePredictionResult(jsonTextArray, files) {
+            let htmlString = ''
+            for (let i = 0; i < jsonTextArray.length && i < files.length; i++) {
+                // parsing a prediction
+                htmlString += '<div class="row col-12">'
+                htmlString += '<div class="col-6">'
+                htmlString += '<p>' + jsonTextArray[i].fileName + '</p>'
+                htmlString += '<p> Top-5 predictions: <ol>'
+                for(let predictionItem of jsonTextArray[i].predictionData) {
+                    htmlString += '<li>' + predictionItem.label + ': ' +  predictionItem.value + '</li>'
+                }
+                htmlString += '</ol></p></div>'
+                // adding a photo
+                htmlString += '<div class="col-6" ' + 'id="prediction-image-' + i.toString() + '">'
+                let reader = new FileReader()
+                reader.onload = function (event) {
+                    let image = document.createElement("img")
+                    image.src = event.target.result
+                    image.width = 200
+                    image.height = 200
+                    $('#prediction-image-' + i.toString()).append(image)
+                }
+                reader.readAsDataURL(files[i])
+                htmlString += '</div>'
+                htmlString += '</div>'
+            }
+
+            return htmlString
+        }
+    </script>
+}
