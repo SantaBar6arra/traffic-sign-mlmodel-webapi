@@ -11,7 +11,13 @@
     <button class="btn btn-info mt-2" onclick="submitImages()">Submit</button>
     <button class="btn btn-info mt-2" id="show-labels-button">Show possible results</button>
 </div>
-<div id="prediction-results-field"></div>
+<div id="predictions-container">
+    <div class="row m-5">
+        <h1 class="d-inline-flex col-10">Prediction results</h1> 
+        <button class="btn btn-danger col-2" onclick="clearPredictionResultsField()">Remove all results</button>
+    </div>
+    <div id="prediction-results-field"></div>
+</div>
 
 <partial name="LabelsModalPartial" />
 
@@ -46,7 +52,6 @@
         })
 
         function submitImages(){
-            $('#prediction-results-field').html('')
             let data = new FormData()
             let files = $('#file-input')[0].files
 
@@ -61,7 +66,7 @@
                     contentType: false,
                     processData: false,
                     success: function (response) {
-                        $('#prediction-results-field').html(parsePredictionResult(response, files))
+                        $('#prediction-results-field').append(parsePredictionResult(response, files))
                     }
                 })
             } else {
@@ -70,6 +75,7 @@
         }
 
         function parsePredictionResult(jsonTextArray, files) {
+            let predictionResultsFieldChildrenCount = $('#prediction-results-field').children().length
             let htmlString = ''
             for (let i = 0; i < jsonTextArray.length && i < files.length; i++) {
                 // parsing a prediction
@@ -82,14 +88,14 @@
                 }
                 htmlString += '</ol></p></div>'
                 // adding a photo
-                htmlString += '<div class="col-6" ' + 'id="prediction-image-' + i.toString() + '">'
+                htmlString += '<div class="col-2 offset-2" ' + 'id="prediction-image-' + (predictionResultsFieldChildrenCount + i).toString() + '">'
                 let reader = new FileReader()
                 reader.onload = function (event) {
                     let image = document.createElement("img")
                     image.src = event.target.result
                     image.width = 200
                     image.height = 200
-                    $('#prediction-image-' + i.toString()).append(image)
+                    $('#prediction-image-' + (predictionResultsFieldChildrenCount + i).toString()).append(image)
                 }
                 reader.readAsDataURL(files[i])
                 htmlString += '</div>'
@@ -97,6 +103,10 @@
             }
 
             return htmlString
+        }
+
+        function clearPredictionResultsField() {
+            $('#prediction-results-field').html('')
         }
     </script>
 }
