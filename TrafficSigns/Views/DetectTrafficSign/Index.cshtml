@@ -10,6 +10,7 @@
     <br />
     <button class="btn btn-info mt-2" onclick="submitImages()">Submit</button>
     <button class="btn btn-info mt-2" id="show-labels-button">Show possible results</button>
+    <button class="btn btn-info mt-2" id="get-precision-rate-button">Get precision rate</button>
 </div>
 <div id="predictions-container">
     <div class="row m-5">
@@ -77,6 +78,7 @@
         function parsePredictionResult(jsonTextArray, files) {
             let predictionResultsFieldChildrenCount = $('#prediction-results-field').children().length
             let htmlString = ''
+            let mostProbableResult = ''
             for (let i = 0; i < jsonTextArray.length && i < files.length; i++) {
                 // parsing a prediction
                 htmlString += '<div class="row col-12">'
@@ -87,6 +89,7 @@
                     htmlString += '<li>' + predictionItem.label + ': ' +  predictionItem.value + '</li>'
                 }
                 htmlString += '</ol></p></div>'
+                mostProbableResult = jsonTextArray[i].predictionData[0].label
                 // adding a photo
                 htmlString += '<div class="col-2 offset-2" ' + 'id="prediction-image-' + (predictionResultsFieldChildrenCount + i).toString() + '">'
                 let reader = new FileReader()
@@ -99,6 +102,11 @@
                 }
                 reader.readAsDataURL(files[i])
                 htmlString += '</div>'
+
+                htmlString += '<div class="col-2" id="prediction-buttons-' + (predictionResultsFieldChildrenCount + i).toString() + '">'
+                htmlString += `<button class="btn btn-success" onclick="addPredictionFeedback('` + mostProbableResult + `', true, ` + (predictionResultsFieldChildrenCount + i).toString() + `)">Correct</button>`
+                htmlString += `<button class="btn btn-danger" onclick="addPredictionFeedback('` + mostProbableResult + `', false, ` + (predictionResultsFieldChildrenCount + i).toString() + `)">False</button>`
+                htmlString += '</div>'
                 htmlString += '</div>'
             }
 
@@ -108,5 +116,35 @@
         function clearPredictionResultsField() {
             $('#prediction-results-field').html('')
         }
+
+        function addPredictionFeedback(label, isTrue, parentIdEnding) {
+            let data = {
+                label : label,
+                isTrue : isTrue
+            }
+            let sender = $(this)
+
+            $.ajax({
+                url : '/feedback',
+                method : 'post',
+                data : data,
+                success : function(result) {
+                    alert($('#prediction-buttons-' + parentIdEnding).html())
+                    $('#prediction-buttons-' + parentIdEnding).html('')
+                    alert(result)
+                }
+            })
+        }
+
+        $('#get-precision-rate-button').click(function () {
+            $.ajax({
+                url : '/precision-rate',
+                type : 'get',
+                success : function (result) {
+                    // replace
+                    alert(result)
+                }
+            }) 
+        })
     </script>
 }

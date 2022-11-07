@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Data;
+using Data.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -12,15 +14,17 @@ namespace TrafficSigns.Controllers
         private readonly ILogger<DetectTrafficSignController> _logger;
         private readonly IConfiguration _configuration;
         private readonly PythonScriptRunner _pyScriptRunner;
+        private readonly IUnitOfWork _unitOfWork;
 
         private const string _outputLabelRegexPattern = @"(?=(?:|;))(.*?):";
         private const string _outputValueRegexPattern = @"\: (.*?)\;";
         private const string _imageOutputDivider = "Image";
 
-        public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration)
+        public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration, IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _configuration = configuration;
+            _unitOfWork = unitOfWork;
             _pyScriptRunner = new();
         }
 
@@ -60,6 +64,24 @@ namespace TrafficSigns.Controllers
                 _logger.LogError(e.Message, DateTime.Now);
                 return Problem(e.Message);
             }
+        }
+
+        [HttpPost("/feedback")]
+        public IActionResult HandleFeedback(PredictionFeedback feedback)
+        {
+            bool result = _unitOfWork.PredictionFeedbackRepository.Add(feedback);
+            if(result) 
+                _unitOfWork.Done();
+            // mocked
+            return Ok(result);
+        }
+
+        [HttpGet("/precision-rate")]
+        public IActionResult GetPrecisionRate()
+        {
+            float precisionRate = _unitOfWork.PredictionFeedbackRepository.GetPrecision();
+            // mocked
+            return Ok(precisionRate);
         }
 
         [NonAction]

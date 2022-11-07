@@ -1,3 +1,5 @@
+using Data;
+
 namespace TrafficSigns
 {
     public class Program
@@ -8,6 +10,8 @@ namespace TrafficSigns
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddTransient<IUnitOfWork>(
+                s => new UnitOfWork(builder.Configuration.GetConnectionString("DefaultMSSQLConnectionString")));
 
             var app = builder.Build();
 
