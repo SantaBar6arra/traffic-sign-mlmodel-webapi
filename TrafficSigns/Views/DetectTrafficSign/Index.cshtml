@@ -102,7 +102,7 @@
                 }
                 reader.readAsDataURL(files[i])
                 htmlString += '</div>'
-
+                // adding buttons
                 htmlString += '<div class="col-2" id="prediction-buttons-' + (predictionResultsFieldChildrenCount + i).toString() + '">'
                 htmlString += `<button class="btn btn-success" onclick="addPredictionFeedback('` + mostProbableResult + `', true, ` + (predictionResultsFieldChildrenCount + i).toString() + `)">Correct</button>`
                 htmlString += `<button class="btn btn-danger" onclick="addPredictionFeedback('` + mostProbableResult + `', false, ` + (predictionResultsFieldChildrenCount + i).toString() + `)">False</button>`
@@ -122,16 +122,13 @@
                 label : label,
                 isTrue : isTrue
             }
-            let sender = $(this)
 
             $.ajax({
                 url : '/feedback',
                 method : 'post',
                 data : data,
                 success : function(result) {
-                    alert($('#prediction-buttons-' + parentIdEnding).html())
                     $('#prediction-buttons-' + parentIdEnding).html('')
-                    alert(result)
                 }
             })
         }
@@ -141,7 +138,7 @@
                 url : '/precision-rate',
                 type : 'get',
                 success : function (result) {
-                    // replace
+                    // mb write that succeeded
                     alert(result)
                 }
             }) 

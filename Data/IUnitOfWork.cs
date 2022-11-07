@@ -10,6 +10,6 @@ namespace Data
     public interface IUnitOfWork
     {
         public PredictionFeedbackRepository PredictionFeedbackRepository { get; }
-        public int Done();
+        public int Complete();
     }
 }

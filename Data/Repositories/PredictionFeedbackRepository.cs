@@ -31,7 +31,7 @@ namespace Data.Repositories
             }
         }
 
-        public float GetPrecision()
+        public float GetPrecisionRate()
         {
             return _context.PredictionFeedbacks.Where(f => f.IsTrue).Count() 
                 / (float)_context.PredictionFeedbacks.Count();

@@ -9,6 +9,6 @@ namespace Data.Repositories
 {
     public interface IPredictionFeedbackRepository : IRepository<PredictionFeedback>
     {
-        public float GetPrecision();
+        public float GetPrecisionRate();
     }
 }

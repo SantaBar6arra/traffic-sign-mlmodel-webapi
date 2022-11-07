@@ -19,7 +19,7 @@ namespace Data
             PredictionFeedbackRepository = new(_context);
         }
 
-        public int Done()
+        public int Complete()
         {
             return _context.SaveChanges();
         }

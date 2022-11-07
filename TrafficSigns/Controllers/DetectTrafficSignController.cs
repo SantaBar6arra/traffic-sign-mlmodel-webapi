@@ -71,16 +71,16 @@ namespace TrafficSigns.Controllers
         {
             bool result = _unitOfWork.PredictionFeedbackRepository.Add(feedback);
             if(result) 
-                _unitOfWork.Done();
-            // mocked
+                _unitOfWork.Complete();
+            // mocked, replace soon
             return Ok(result);
         }
 
         [HttpGet("/precision-rate")]
         public IActionResult GetPrecisionRate()
         {
-            float precisionRate = _unitOfWork.PredictionFeedbackRepository.GetPrecision();
-            // mocked
+            float precisionRate = _unitOfWork.PredictionFeedbackRepository.GetPrecisionRate();
+            // mocked, replace soon
             return Ok(precisionRate);
         }
 
