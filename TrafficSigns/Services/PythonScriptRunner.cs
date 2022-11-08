@@ -23,7 +23,7 @@ namespace TrafficSigns.Services
             _modelFolderPath = _configuration[Constants.Constants.ModelFolderPath];
         }
 
-        public string Run(string imagesFolderPath, string resultsFolderPath)
+        public string Run(string imagesFolderPath)
         {
             ProcessStartInfo processStartInfo = new()
             {
@@ -33,12 +33,8 @@ namespace TrafficSigns.Services
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 WorkingDirectory = _workingDirectory, 
-                Arguments = FormQuery(imagesFolderPath, resultsFolderPath)
+                Arguments = FormQuery(imagesFolderPath)
             };
-
-            DirectoryInfo resultsDirectoryPathInfo = new(resultsFolderPath);
-            if (!resultsDirectoryPathInfo.Exists)
-                resultsDirectoryPathInfo.Create();
 
             string output = string.Empty, error = String.Empty;
 
@@ -53,13 +49,12 @@ namespace TrafficSigns.Services
             return output;
         }
 
-        private string FormQuery(string imagesFolderPath, string resultsFolderPath)
+        private string FormQuery(string imagesFolderPath)
         {
             _queryBuilder.Clear();
             _queryBuilder.Append($"{_scriptName} ");
             _queryBuilder.Append($"-m {_modelFolderPath} ");
             _queryBuilder.Append($"-i {imagesFolderPath} ");
-            _queryBuilder.Append($"-o {resultsFolderPath}");
 
             return _queryBuilder.ToString();
         }

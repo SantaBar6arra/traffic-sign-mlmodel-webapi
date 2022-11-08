@@ -17,8 +17,6 @@ ap.add_argument("-m", "--model", required=True,
 	help="path to pre-trained traffic sign recognizer")
 ap.add_argument("-i", "--images", required=True,
 	help="path to testing directory containing images")
-ap.add_argument("-o", "--output", required=True,
-	help="path to output examples directory")
 args = vars(ap.parse_args())
 
 # load the traffic sign recognizer model
@@ -30,10 +28,6 @@ labelNames = [l.split(",")[1] for l in labelNames]
 
 # grab the paths to the input images
 image_paths = list(paths.list_images(args["images"]))
-
-# open file for results and clear all its contents
-file_path = os.path.sep.join([args["output"], "prediction_results.txt"])
-file = open(file_path, "w").close()
 
 results = []
 

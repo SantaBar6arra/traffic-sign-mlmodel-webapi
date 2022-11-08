@@ -52,8 +52,7 @@ namespace TrafficSigns.Controllers
 
                 var predictionResult =
                         FormResults(_pyScriptRunner.Run(
-                            photosDirectory.FullName,
-                            _configuration[Constants.Constants.OutputDataFolder]), photosDirectory.FullName);
+                            photosDirectory.FullName), photosDirectory.FullName);
 
                 photosDirectory.Delete(recursive: true);
 

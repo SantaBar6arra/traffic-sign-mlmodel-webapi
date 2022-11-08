@@ -20,7 +20,8 @@
     <div id="prediction-results-field"></div>
 </div>
 
-<partial name="LabelsModalPartial" />
+<partial name="ModalPartial" />
+<partial name="ModalPartial" />
 
 @section Scripts {
     <script src="~/lib/jquery/dist/jquery.js"></script>
@@ -28,7 +29,13 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
 
     <script>
-        $(document).ready(loadLabels)
+        $(document).ready(function() {
+            $('.modal-window').eq(0).attr('id', 'labels-modal-window')
+            $('#labels-modal-window .modal-body').attr('id', 'labels-modal-body')
+            $('.modal-window').eq(1).attr('id', 'precision-rate-modal-window')
+            loadLabels()
+            getPrecisionRate()
+        })
 
         function loadLabels() {
             $.ajax({
@@ -48,8 +55,14 @@
             $('#labels-modal-window').modal('show')
         })
 
-        $('#labels-close-button').click(function() {
+        $('#get-precision-rate-button').click(function() {
+            getPrecisionRate()
+            $('#precision-rate-modal-window').modal('show')
+        })
+
+        $('.btn.modal-close').click(function() {
             $('#labels-modal-window').modal('hide')
+            $('#precision-rate-modal-window').modal('hide')
         })
 
         function submitImages(){
@@ -133,15 +146,14 @@
             })
         }
 
-        $('#get-precision-rate-button').click(function () {
+        function getPrecisionRate() {
             $.ajax({
-                url : '/precision-rate',
-                type : 'get',
-                success : function (result) {
-                    // mb write that succeeded
-                    alert(result)
+                url: '/precision-rate',
+                type: 'get',
+                success: function (result) {
+                    $('#precision-rate-modal-window .modal-body').html('<p>Precision is: ' + result.toString() + '</p>')
                 }
-            }) 
-        })
+            })
+        }
     </script>
 }
