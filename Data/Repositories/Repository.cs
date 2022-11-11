@@ -1,6 +1,7 @@
 ﻿using Data.Context;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,9 +30,6 @@ namespace Data.Repositories
             }
         }
 
-        IEnumerable<T> IRepository<T>.GetAll()
-        {
-            return _context.Set<T>().ToList();
-        }
+        async Task<IEnumerable<T>> IRepository<T>.GetAll() => await _context.Set<T>().ToListAsync();
     }
 }

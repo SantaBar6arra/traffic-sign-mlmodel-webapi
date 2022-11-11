@@ -19,6 +19,7 @@ namespace TrafficSigns.Controllers
         private const string _outputLabelRegexPattern = @"(?=(?:|;))(.*?):";
         private const string _outputValueRegexPattern = @"\: (.*?)\;";
         private const string _imageOutputDivider = "Image";
+        private const char _tableColumnsDivider = ',';
 
         public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration, IUnitOfWork unitOfWork)
         {
@@ -137,6 +138,32 @@ namespace TrafficSigns.Controllers
                 matchGroups.Add(matches[i].Groups[1].Value);
 
             return matchGroups;
+        }
+
+        [HttpGet("/labels")]
+        public IActionResult GetLabels()
+        {
+            List<string> labels = new();
+            try
+            {
+                using (var streamReader = new StreamReader(_configuration[Constants.Constants.LabelsFilePath]))
+                {
+                    while (!streamReader.EndOfStream)
+                    {
+                        var splits = streamReader.ReadLine().Split(_tableColumnsDivider);
+                        labels.Add(splits[1]);
+                    }
+                    streamReader.Close();
+                }
+                labels.RemoveAt(0); // deleting column name
+
+                return new JsonResult(labels);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message, DateTime.Now);
+                return Problem();
+            }
         }
 
         [HttpGet]

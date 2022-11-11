@@ -8,7 +8,7 @@ namespace Data.Repositories
 {
     public interface IRepository<T> where T : class
     {
-        public IEnumerable<T> GetAll();
+        public Task<IEnumerable<T>> GetAll();
         public bool Add(T entity);
     }
 }
