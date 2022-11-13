@@ -67,13 +67,15 @@ namespace TrafficSigns.Controllers
         }
 
         [HttpPost("/feedback")]
-        public IActionResult HandleFeedback(PredictionFeedback feedback)
+        public async Task<IActionResult> HandleFeedback(PredictionFeedback feedback)
         {
             bool result = _unitOfWork.PredictionFeedbackRepository.Add(feedback);
-            if(result) 
-                _unitOfWork.Complete();
-            // mocked, replace soon
-            return Ok(result);
+            if (result)
+            {
+                await _unitOfWork.Complete();
+                return Ok(result);
+            }
+            return Problem("cannot add feedback to database", statusCode: 500);            
         }
 
         [HttpGet("/precision-rate")]
