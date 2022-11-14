@@ -23,7 +23,7 @@ namespace TrafficSigns.Services
             _modelFolderPath = _configuration[Constants.Constants.ModelFolderPath];
         }
 
-        public string Run(string imagesFolderPath)
+        public async Task<string> RunAsync(string imagesFolderPath)
         {
             ProcessStartInfo processStartInfo = new()
             {
@@ -38,11 +38,10 @@ namespace TrafficSigns.Services
 
             string output = string.Empty, error = String.Empty;
 
-            using (var process = Process.Start(processStartInfo))
-            {
-                output = process.StandardOutput.ReadToEnd();
-                error = process.StandardError.ReadToEnd();
-            }
+            var process = Process.Start(processStartInfo);
+            await process.WaitForExitAsync();
+            output = process.StandardOutput.ReadToEnd();
+            // error = process.StandardError.ReadToEnd();
 
             output = output.Substring(output.IndexOf('\t') + 1).Trim('\r', '\n');
 

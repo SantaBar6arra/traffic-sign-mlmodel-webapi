@@ -32,7 +32,7 @@ namespace TrafficSigns.Controllers
         [HttpPost("/detect-traffic-sign")]
         [DisableRequestSizeLimit]
         [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
-        public IActionResult DetectTrafficSign()
+        public async Task<IActionResult> DetectTrafficSignAsync()
         {
             try
             {
@@ -52,7 +52,7 @@ namespace TrafficSigns.Controllers
                 }
 
                 var predictionResult =
-                        FormResults(_pyScriptRunner.Run(
+                        FormResults(await _pyScriptRunner.RunAsync(
                             photosDirectory.FullName), photosDirectory.FullName);
 
                 photosDirectory.Delete(recursive: true);
