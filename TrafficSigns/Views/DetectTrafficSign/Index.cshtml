@@ -70,8 +70,15 @@
             let files = $('#file-input')[0].files
 
             if (files.length > 0) {
-                for(const file of files)
-                    data.append('file', file)
+                for(const file of files) {
+                    let fileExtension = file.name.split('.').pop()
+                    if (fileExtension == 'png' || fileExtension == 'jpg' || fileExtension == 'jpeg') {
+                        data.append('file', file)
+                    } else {
+                        alert('wrong file type! We support only .png, .jpg and .jpeg files!')
+                        return
+                    }
+                }
 
                 $.ajax({
                     url: '/detect-traffic-sign',
