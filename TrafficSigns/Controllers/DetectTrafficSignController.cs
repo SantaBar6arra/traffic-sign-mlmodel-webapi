@@ -12,20 +12,25 @@ namespace TrafficSigns.Controllers
     {
         private readonly ILogger<DetectTrafficSignController> _logger;
         private readonly IConfiguration _configuration;
-        private readonly PythonScriptRunner _pyScriptRunner;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly PythonScriptRunner _pyScriptRunner;
+        private readonly CloudinaryService _cloudinaryService;
+        
 
         private const string _outputLabelRegexPattern = @"(?=(?:|;))(.*?):";
         private const string _outputValueRegexPattern = @"\: (.*?)\;";
         private const string _imageOutputDivider = "Image";
         private const char _tableColumnsDivider = ',';
 
-        public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, IConfiguration configuration, IUnitOfWork unitOfWork)
+        public DetectTrafficSignController(ILogger<DetectTrafficSignController> logger, 
+            IConfiguration configuration, 
+            IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
             _pyScriptRunner = new();
+            _cloudinaryService = new(configuration);
         }
 
         [HttpPost("/detect-traffic-sign")]
@@ -37,7 +42,7 @@ namespace TrafficSigns.Controllers
             {
                 string guid = Guid.NewGuid().ToString();
                 DirectoryInfo photosDirectory = Directory.CreateDirectory(
-                    Path.Combine(_configuration[Constants.Constants.InputDataFolder], guid));
+                    Path.Combine(_configuration[Constants.Constants.Python_InputDataFolder], guid));
 
                 var files = Request.Form.Files;
                 foreach (var file in files)
@@ -68,12 +73,13 @@ namespace TrafficSigns.Controllers
         [HttpPost("/feedback")]
         public async Task<IActionResult> HandleFeedback(PredictionFeedback feedback)
         {
-            bool result = _unitOfWork.PredictionFeedbackRepository.Add(feedback);
-            if (result)
-            {
-                await _unitOfWork.Complete();
-                return Ok(result);
-            }
+            feedback.ImageUrl = (await _cloudinaryService.UploadImage(
+                Request.Form.Files[0])).SecureUrl.ToString();   
+
+            if (_unitOfWork.PredictionFeedbackRepository.Add(feedback))
+                if(await _unitOfWork.Complete() > 0)
+                    return Ok();
+
             return Problem("cannot add feedback to database", statusCode: 500);            
         }
 

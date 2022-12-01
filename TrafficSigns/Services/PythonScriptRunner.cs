@@ -17,10 +17,10 @@ namespace TrafficSigns.Services
         public PythonScriptRunner()
         {
             _configuration = new ConfigurationBuilder().AddJsonFile(Constants.Constants.AppSettingsFileName).Build();
-            _pythonExeName = _configuration[Constants.Constants.PythonExeName];
-            _workingDirectory = _configuration[Constants.Constants.WorkingDirectory];
-            _scriptName = _configuration[Constants.Constants.ScriptName];
-            _modelFolderPath = _configuration[Constants.Constants.ModelFolderPath];
+            _pythonExeName = _configuration[Constants.Constants.Python_PythonExeName];
+            _workingDirectory = _configuration[Constants.Constants.Python_WorkingDirectory];
+            _scriptName = _configuration[Constants.Constants.Python_ScriptName];
+            _modelFolderPath = _configuration[Constants.Constants.Python_ModelFolderPath];
         }
 
         public async Task<string> RunAsync(string imagesFolderPath)

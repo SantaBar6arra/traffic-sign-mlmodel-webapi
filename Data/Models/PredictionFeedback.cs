@@ -11,5 +11,6 @@ namespace Data.Models
         public int Id { get; set; }
         public string Label { get; set; }
         public bool IsTrue { get; set; }
+        public string ImageUrl { get; set; }
     }
 }
